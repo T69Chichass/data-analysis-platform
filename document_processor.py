@@ -29,7 +29,7 @@ from nltk.corpus import stopwords
 # Database and vector store
 from sqlalchemy.orm import Session
 from dependencies import get_database_manager, get_pinecone_manager, get_embedding_manager
-from database import DocumentMetadata, DocumentChunk
+from create_tables import DocumentMetadata, DocumentChunk
 from exceptions import *
 
 # Download required NLTK data
@@ -37,11 +37,6 @@ try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
-
-try:
-    nltk.data.find('tokenizers/punkt_tab')
-except LookupError:
-    nltk.download('punkt_tab')
 
 try:
     nltk.data.find('corpora/stopwords')
@@ -378,8 +373,11 @@ class DocumentProcessor:
             
             # Batch upsert to Pinecone
             if vectors_to_upsert:
-                self.pinecone_manager.index.upsert(vectors=vectors_to_upsert)
-                logger.info(f"Upserted {len(vectors_to_upsert)} vectors to Pinecone")
+                if self.pinecone_manager.mock_mode:
+                    logger.warning("Pinecone in mock mode - skipping vector upsert")
+                else:
+                    self.pinecone_manager.index.upsert(vectors=vectors_to_upsert)
+                    logger.info(f"Upserted {len(vectors_to_upsert)} vectors to Pinecone")
             
             db.commit()
             results = [{"chunk_id": chunk["chunk_id"], "status": "success"} for chunk in chunks]

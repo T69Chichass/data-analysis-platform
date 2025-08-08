@@ -7,6 +7,11 @@ This script helps set up the required API keys and test connections.
 import os
 import sys
 from dotenv import load_dotenv
+import pinecone
+
+# Initialize Pinecone
+pinecone.init(api_key="YOUR_API_KEY", environment="YOUR_ENV")
+index = pinecone.Index("your-index-name")
 
 def create_env_file():
     """Create or update .env file with API configurations."""
@@ -130,7 +135,7 @@ def test_connections():
     # Test Pinecone
     print("\n🌲 Testing Pinecone...")
     try:
-        from pinecone import Pinecone
+        from pinecone import Pinecone, ServerlessSpec
         api_key = os.getenv('PINECONE_API_KEY')
         index_name = os.getenv('PINECONE_INDEX_NAME')
         
