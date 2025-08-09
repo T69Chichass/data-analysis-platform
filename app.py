@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """
-FastAPI Web Application for Insurance Policy Analyzer
+Flask Web Application for Insurance Policy Analyzer
 Deployable to Render for testing.
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
-import uvicorn
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import requests
 import time
@@ -19,41 +16,16 @@ from pathlib import Path
 # Import the enhanced analyzer
 from enhanced_text_analyzer import EnhancedTextPolicyAnalyzer
 
-app = FastAPI(
-    title="Insurance Policy Analyzer API",
-    description="AI-powered insurance policy document analyzer with 100% accuracy",
-    version="1.0.0"
-)
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = Flask(__name__)
+CORS(app)
 
 # Initialize the analyzer
 analyzer = EnhancedTextPolicyAnalyzer()
 
-class PolicyQuery(BaseModel):
-    documents: str
-    questions: List[str]
-
-class AnalysisResponse(BaseModel):
-    success: bool
-    accuracy: float
-    found_count: int
-    total_questions: int
-    results: List[dict]
-    timestamp: str
-    message: str
-
-@app.get("/")
-async def root():
+@app.route('/')
+def root():
     """Root endpoint with API information."""
-    return {
+    return jsonify({
         "message": "Insurance Policy Analyzer API",
         "version": "1.0.0",
         "accuracy": "100%",
@@ -62,43 +34,45 @@ async def root():
             "health": "/health",
             "docs": "/docs"
         }
-    }
+    })
 
-@app.get("/health")
-async def health_check():
+@app.route('/health')
+def health_check():
     """Health check endpoint."""
-    return {
+    return jsonify({
         "status": "healthy",
         "service": "Insurance Policy Analyzer",
         "accuracy": "100%"
-    }
+    })
 
-@app.post("/analyze", response_model=AnalysisResponse)
-async def analyze_policy(query: PolicyQuery):
+@app.route('/analyze', methods=['POST'])
+def analyze_policy():
     """
     Analyze insurance policy document and answer questions.
-    
-    Args:
-        query: PolicyQuery object containing document URL and questions
-    
-    Returns:
-        AnalysisResponse with results and accuracy metrics
     """
     try:
-        print(f"🔍 Received analysis request for {len(query.questions)} questions")
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        documents = data.get('documents')
+        questions = data.get('questions')
         
         # Validate input
-        if not query.documents or not query.questions:
-            raise HTTPException(status_code=400, detail="Document URL and questions are required")
+        if not documents or not questions:
+            return jsonify({"error": "Document URL and questions are required"}), 400
         
-        if len(query.questions) == 0:
-            raise HTTPException(status_code=400, detail="At least one question is required")
+        if len(questions) == 0:
+            return jsonify({"error": "At least one question is required"}), 400
+        
+        print(f"🔍 Received analysis request for {len(questions)} questions")
         
         # Perform analysis
-        results = analyzer.analyze_policy(query.documents, query.questions)
+        results = analyzer.analyze_policy(documents, questions)
         
         if not results:
-            raise HTTPException(status_code=500, detail="Failed to analyze policy document")
+            return jsonify({"error": "Failed to analyze policy document"}), 500
         
         # Calculate accuracy
         found_count = 0
@@ -106,28 +80,28 @@ async def analyze_policy(query: PolicyQuery):
             if "Information not found" not in result['answer'] and "not recognized" not in result['answer']:
                 found_count += 1
         
-        accuracy = (found_count / len(query.questions)) * 100
+        accuracy = (found_count / len(questions)) * 100
         
         # Prepare response
-        response = AnalysisResponse(
-            success=True,
-            accuracy=accuracy,
-            found_count=found_count,
-            total_questions=len(query.questions),
-            results=results,
-            timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
-            message=f"Analysis completed successfully with {accuracy:.1f}% accuracy"
-        )
+        response = {
+            "success": True,
+            "accuracy": accuracy,
+            "found_count": found_count,
+            "total_questions": len(questions),
+            "results": results,
+            "timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
+            "message": f"Analysis completed successfully with {accuracy:.1f}% accuracy"
+        }
         
         print(f"✅ Analysis completed with {accuracy:.1f}% accuracy")
-        return response
+        return jsonify(response)
         
     except Exception as e:
         print(f"❌ Error during analysis: {e}")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        return jsonify({"error": f"Analysis failed: {str(e)}"}), 500
 
-@app.post("/test")
-async def test_endpoint():
+@app.route('/test', methods=['POST'])
+def test_endpoint():
     """Test endpoint with sample data."""
     sample_query = {
         "documents": "https://hackrx.blob.core.windows.net/assets/policy.pdf?sv=2023-01-03&st=2025-07-04T09%3A11%3A24Z&se=2027-07-05T09%3A11%3A00Z&sr=b&sp=r&sig=N4a9OU0w0QXO6AOIBiu4bpl7AXvEZogeT%2FjUHNO7HzQ%3D",
@@ -150,24 +124,24 @@ async def test_endpoint():
             
             accuracy = (found_count / len(sample_query["questions"])) * 100
             
-            return {
+            return jsonify({
                 "success": True,
                 "test_results": results,
                 "accuracy": accuracy,
                 "message": f"Test completed successfully with {accuracy:.1f}% accuracy"
-            }
+            })
         else:
-            return {
+            return jsonify({
                 "success": False,
                 "message": "Test analysis failed"
-            }
+            })
             
     except Exception as e:
-        return {
+        return jsonify({
             "success": False,
             "message": f"Test failed: {str(e)}"
-        }
+        })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=False)
