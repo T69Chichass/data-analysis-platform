@@ -1,0 +1,40 @@
+Policy Analysis Results
+==============================
+
+Document URL: https://hackrx.blob.core.windows.net/assets/policy.pdf?sv=2023-01-03&st=2025-07-04T09%3A11%3A24Z&se=2027-07-05T09%3A11%3A00Z&sr=b&sp=r&sig=N4a9OU0w0QXO6AOIBiu4bpl7AXvEZogeT%2FjUHNO7HzQ%3D
+Analysis Timestamp: 2025-08-09 19:30:43
+============================================================
+
+## Question 1: What is the grace period for premium payment under the National Parivar Mediclaim Plus Policy?
+**Answer:** The Grace Period for payment of the premium shall be thirty days.
+
+## Question 2: What is the waiting period for pre-existing diseases (PED) to be covered?
+**Answer:** Information not found in the document.
+
+## Question 3: Does this policy cover maternity expenses, and what are the conditions?
+**Answer:** Information not found in the document.
+
+## Question 4: What is the waiting period for cataract surgery?
+**Answer:** Information not found in the document.
+
+## Question 5: Are the medical expenses for an organ donor covered under this policy?
+**Answer:** Information not found in the document.
+
+## Question 6: What is the No Claim Discount (NCD) offered in this policy?
+**Answer:** Information not found in the document.
+
+## Question 7: Is there a benefit for preventive health check-ups?
+**Answer:** Information not found in the document.
+
+## Question 8: How does the policy define a 'Hospital'?
+**Answer:** Hospital means any institution established for in -patient care and day care treatment of disease / injuries and which has been registered as a hospital with the local authorities under the Clinical Establishments (Registration and Regulation) Act, 2010 or under the enactments specified under Schedule of Section 56(1) of the said Act, OR complies with all minimum criteria as under:
+i. has qualified nursing staff under its employment round the clock;
+ii. has at least ten inpatient beds, in those towns having a population of less than ten lacs and fifteen inpatient beds in all other places;
+iii. has qualified medical practitioner (s) in charge round the clock;
+iv. has a fully equipped operation theatre of its own where surgical procedures are carr
+
+## Question 9: What is the extent of coverage for AYUSH treatments?
+**Answer:** The preamble states that the Company shall indemnify the Hospital or the Insured, Reasonable and Customary Charges incurred for Medically Necessary Treatment towards the Coverage mentioned herein. AYUSH Treatments are included in the definitions. Therefore, AYUSH treatments are covered to the extent defined in the policy.
+
+## Question 10: Are there any sub-limits on room rent and ICU charges for Plan A?
+**Answer:** Information not found in the document.

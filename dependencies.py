@@ -22,16 +22,15 @@ except Exception as e:
     PINECONE_AVAILABLE = False
     pinecone = None
 
-from openai import OpenAI
-from openai import AsyncOpenAI
+import google.generativeai as genai
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 
-# Load environment variables (commented out due to .env file issue)
-# load_dotenv()
+# Load environment variables from tempenv.py
+import tempenv
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -115,10 +114,10 @@ class PineconeManager:
             self.mock_mode = True
             return
             
-        # Try to get from environment variables, fallback to hardcoded values
-        self.api_key = os.getenv("PINECONE_API_KEY", "pcsk_3WBKR7_JMdkSFuxiUfNDp3vqz3heEM6heaS9tugp43bocDx5ztRfHQsCF76ST9fVRVFCLS")
-        self.index_name = os.getenv("PINECONE_INDEX_NAME", "loopersbaja")
-        self.environment = os.getenv("PINECONE_ENVIRONMENT", "us-east-1")
+        # Get API keys from tempenv.py
+        self.api_key = os.environ.get("PINECONE_API_KEY")
+        self.index_name = os.environ.get("PINECONE_INDEX_NAME")
+        self.environment = os.environ.get("PINECONE_ENVIRONMENT")
         
         # Check if using placeholder values
         if any(key in ["your_pinecone_api_key_here", "your_pinecone_index_name_here", "your_pinecone_environment_here"] 
@@ -187,72 +186,60 @@ class PineconeManager:
             return False
 
 
-class OpenAIManager:
-    """Manages OpenAI API connections and requests."""
+class GeminiManager:
+    """Manages Google Gemini API connections and requests."""
     
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY", "your_openai_api_key_here")
-        self.mock_mode = self.api_key in ["sk-demo-key", "your_openai_api_key_here"]
+        self.api_key = os.environ.get("GEMINI_API_KEY")
+        self.mock_mode = not self.api_key or self.api_key in ["your_gemini_api_key_here", "demo-key"]
         
         if not self.mock_mode:
-            self.client = AsyncOpenAI(api_key=self.api_key)
-            self.sync_client = OpenAI(api_key=self.api_key)
+            genai.configure(api_key=self.api_key)
+            self.model = genai.GenerativeModel(os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-exp"))
         else:
-            logger.warning("Using mock OpenAI configuration")
-            logger.info("To enable OpenAI, update the API key in dependencies.py")
-            self.client = None
-            self.sync_client = None
+            logger.warning("Using mock Gemini configuration")
+            logger.info("To enable Gemini, update the API key in tempenv.py")
+            self.model = None
             
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4")
-        self.max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", "1500"))
-        self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.1"))
+        self.max_tokens = int(os.environ.get("GEMINI_MAX_TOKENS", "1500"))
+        self.temperature = float(os.environ.get("GEMINI_TEMPERATURE", "0.1"))
     
     async def generate_response(self, prompt: str) -> str:
-        """Generate response using OpenAI API."""
+        """Generate response using Gemini API."""
         if self.mock_mode:
-            logger.warning("OpenAI not available - returning mock response")
-            return "This is a mock response from the AI assistant. Please configure OpenAI API for full functionality."
+            logger.warning("Gemini not available - returning mock response")
+            return "This is a mock response from the AI assistant. Please configure Gemini API for full functionality."
             
         try:
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an AI assistant designed to analyze legal and policy documents with high accuracy and provide clear, well-reasoned answers."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                top_p=0.9,
-                frequency_penalty=0.0,
-                presence_penalty=0.0
+            # Create a system prompt for document analysis
+            system_prompt = "You are an AI assistant designed to analyze legal and policy documents with high accuracy and provide clear, well-reasoned answers."
+            full_prompt = f"{system_prompt}\n\nUser Query: {prompt}"
+            
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=self.max_tokens,
+                    temperature=self.temperature,
+                    top_p=0.9
+                )
             )
             
-            return response.choices[0].message.content.strip()
+            return response.text.strip()
         except Exception as e:
-            logger.error(f"OpenAI API call failed: {e}")
+            logger.error(f"Gemini API call failed: {e}")
             raise e
     
     def test_connection(self) -> bool:
-        """Test OpenAI API connection."""
+        """Test Gemini API connection."""
         if self.mock_mode:
             return False
             
         try:
-            # Simple test with minimal tokens
-            response = self.sync_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": "Test"}],
-                max_tokens=1
-            )
+            # Simple test
+            response = self.model.generate_content("Test")
             return True
         except Exception as e:
-            logger.error(f"OpenAI connection test failed: {e}")
+            logger.error(f"Gemini connection test failed: {e}")
             return False
 
 
@@ -260,7 +247,7 @@ class EmbeddingManager:
     """Manages sentence transformer model for generating embeddings."""
     
     def __init__(self):
-        self.model_name = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+        self.model_name = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
         self._load_model()
     
     def _load_model(self):
@@ -294,7 +281,7 @@ class EmbeddingManager:
 # Global instances (singletons)
 _database_manager: Optional[DatabaseManager] = None
 _pinecone_manager: Optional[PineconeManager] = None
-_openai_manager: Optional[OpenAIManager] = None
+_gemini_manager: Optional[GeminiManager] = None
 _embedding_manager: Optional[EmbeddingManager] = None
 
 
@@ -317,12 +304,12 @@ def get_pinecone_manager() -> PineconeManager:
 
 
 @lru_cache()
-def get_openai_manager() -> OpenAIManager:
-    """Get OpenAI manager instance."""
-    global _openai_manager
-    if _openai_manager is None:
-        _openai_manager = OpenAIManager()
-    return _openai_manager
+def get_gemini_manager() -> GeminiManager:
+    """Get Gemini manager instance."""
+    global _gemini_manager
+    if _gemini_manager is None:
+        _gemini_manager = GeminiManager()
+    return _gemini_manager
 
 
 @lru_cache()
@@ -365,15 +352,15 @@ async def check_service_health() -> Dict[str, str]:
     except Exception:
         health_status["pinecone"] = "unhealthy"
     
-    # Check OpenAI
+    # Check Gemini
     try:
-        openai_manager = get_openai_manager()
-        if openai_manager.mock_mode:
-            health_status["openai"] = "mock_mode"
+        gemini_manager = get_gemini_manager()
+        if gemini_manager.mock_mode:
+            health_status["gemini"] = "mock_mode"
         else:
-            health_status["openai"] = "healthy" if openai_manager.test_connection() else "unhealthy"
+            health_status["gemini"] = "healthy" if gemini_manager.test_connection() else "unhealthy"
     except Exception:
-        health_status["openai"] = "unhealthy"
+        health_status["gemini"] = "unhealthy"
     
     # Check embedding model (always healthy if loaded)
     try:

@@ -66,3 +66,4 @@ logs/
 # API keys and secrets
 secrets.json
 config.json
+tempenv.py

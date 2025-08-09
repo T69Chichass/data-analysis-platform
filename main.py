@@ -2,6 +2,9 @@
 FastAPI application for LLM-Powered Intelligent Query-Retrieval System.
 Processes natural language queries against document corpus using vector search and GPT-4.
 """
+# Import tempenv to load API keys
+import tempenv
+
 import json
 import uuid
 import logging
@@ -31,12 +34,12 @@ from models import (
 )
 from dependencies import (
     get_pinecone_manager,
-    get_openai_manager,
+    get_gemini_manager,
     get_embedding_manager,
     get_db_session,
     check_service_health,
     PineconeManager,
-    OpenAIManager,
+    GeminiManager,
     EmbeddingManager
 )
 from document_processor import DocumentProcessor
@@ -81,7 +84,7 @@ async def startup_event():
         # Initialize all managers to ensure they're ready
         get_embedding_manager()
         get_pinecone_manager()
-        get_openai_manager()
+        get_gemini_manager()
         
         logger.info("All services initialized successfully")
     except Exception as e:
@@ -111,14 +114,14 @@ async def global_exception_handler(request, exc):
 
 def construct_llm_prompt(query: str, context_chunks: List[PineconeSearchResult]) -> str:
     """
-    Construct a comprehensive prompt for GPT-4.
+    Construct a comprehensive prompt for Gemini.
     
     Args:
         query: The user's natural language question
         context_chunks: List of relevant document chunks from Pinecone
     
     Returns:
-        Formatted prompt string for GPT-4
+        Formatted prompt string for Gemini
     """
     # Create context section
     context_section = "[CONTEXT]\n"
@@ -239,7 +242,7 @@ async def health_check():
 async def process_query(
     request: QueryRequest,
     pinecone_manager: PineconeManager = Depends(get_pinecone_manager),
-    openai_manager: OpenAIManager = Depends(get_openai_manager),
+    gemini_manager: GeminiManager = Depends(get_gemini_manager),
     embedding_manager: EmbeddingManager = Depends(get_embedding_manager),
     db_session=Depends(get_db_session)
 ):
@@ -310,9 +313,9 @@ async def process_query(
         logger.info(f"Constructing LLM prompt for query {query_id}")
         llm_prompt = construct_llm_prompt(request.query, context_chunks)
         
-        # Step 5: Generate response using GPT-4
+        # Step 5: Generate response using Gemini
         logger.info(f"Generating LLM response for query {query_id}")
-        llm_response = await openai_manager.generate_response(llm_prompt)
+        llm_response = await gemini_manager.generate_response(llm_prompt)
         
         # Step 6: Parse the JSON response
         logger.info(f"Parsing LLM response for query {query_id}")

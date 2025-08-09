@@ -2,6 +2,9 @@
 Document processing pipeline for extracting text from various file formats
 and preparing them for vector storage and querying.
 """
+# Import tempenv to load API keys
+import tempenv
+
 import os
 import uuid
 import hashlib
