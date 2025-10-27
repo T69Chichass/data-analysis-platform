@@ -46,24 +46,7 @@ A high-accuracy AI-powered insurance policy document analyzer with **100% accura
    - Open: http://localhost:8000/docs
    - Interactive Swagger UI for testing
 
-### Render Deployment
 
-1. **Fork/Clone this repository**
-
-2. **Deploy to Render:**
-   - Go to [Render Dashboard](https://dashboard.render.com)
-   - Click "New Web Service"
-   - Connect your GitHub repository
-   - Configure:
-     - **Name**: `insurance-policy-analyzer`
-     - **Environment**: `Python 3`
-     - **Build Command**: `pip install -r requirements.txt`
-     - **Start Command**: `python app.py`
-     - **Plan**: Free (or paid for better performance)
-
-3. **Get your deployment URL:**
-   - Format: `https://your-app-name.onrender.com`
-   - Example: `https://insurance-policy-analyzer.onrender.com`
 
 ## 📡 API Endpoints
 
@@ -187,46 +170,8 @@ console.log(`Accuracy: ${result.accuracy}%`);
 - **Concurrent Requests**: Supported
 - **Rate Limits**: None (offline processing)
 
-## 🔧 Configuration
 
-### Environment Variables
-- `PORT`: Server port (default: 8000)
-- `CORS_ORIGINS`: Allowed origins (default: "*")
 
-### Dependencies
-- `fastapi`: Web framework
-- `uvicorn`: ASGI server
-- `pydantic`: Data validation
-- `requests`: HTTP client
-- `PyPDF2`: PDF processing
-
-## 🧪 Testing
-
-### Automated Tests
-```bash
-python test_api.py
-```
-
-### Manual Testing
-1. Start the server: `python app.py`
-2. Open: http://localhost:8000/docs
-3. Use the interactive Swagger UI
-4. Test with sample data
-
-## 📝 License
-
-MIT License - Feel free to use for testing and evaluation.
-
-## 🤝 Support
-
-For testing and integration support, contact the development team.
-
----
-
-**Ready for Testing! 🎯**
-
-Your webhook URL will be:
-```
 https://your-app-name.onrender.com/analyze
 ```
 
